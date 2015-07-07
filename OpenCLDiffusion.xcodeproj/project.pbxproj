@@ -8,23 +8,29 @@
 
 /* Begin PBXBuildFile section */
 		1E74629F1B4AC41C00D84B53 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E74629E1B4AC41C00D84B53 /* main.c */; };
+		1E7462A61B4AC44200D84B53 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E7462A51B4AC44200D84B53 /* OpenCL.framework */; };
+		1E7462A91B4AD19700D84B53 /* kernel.cl in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1E7462A71B4AD18400D84B53 /* kernel.cl */; };
+		1E7462AA1B4ADC7400D84B53 /* kernel.cl in Sources */ = {isa = PBXBuildFile; fileRef = 1E7462A71B4AD18400D84B53 /* kernel.cl */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		1E7462991B4AC41C00D84B53 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 16;
 			files = (
+				1E7462A91B4AD19700D84B53 /* kernel.cl in CopyFiles */,
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1E74629B1B4AC41C00D84B53 /* OpenCLDiffusion */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = OpenCLDiffusion; sourceTree = BUILT_PRODUCTS_DIR; };
 		1E74629E1B4AC41C00D84B53 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		1E7462A51B4AC44200D84B53 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
+		1E7462A71B4AD18400D84B53 /* kernel.cl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.opencl; path = kernel.cl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1E7462A61B4AC44200D84B53 /* OpenCL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +48,7 @@
 		1E7462921B4AC41C00D84B53 = {
 			isa = PBXGroup;
 			children = (
+				1E7462A51B4AC44200D84B53 /* OpenCL.framework */,
 				1E74629D1B4AC41C00D84B53 /* OpenCLDiffusion */,
 				1E74629C1B4AC41C00D84B53 /* Products */,
 			);
@@ -58,6 +66,7 @@
 			isa = PBXGroup;
 			children = (
 				1E74629E1B4AC41C00D84B53 /* main.c */,
+				1E7462A71B4AD18400D84B53 /* kernel.cl */,
 			);
 			path = OpenCLDiffusion;
 			sourceTree = "<group>";
@@ -118,6 +127,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1E7462AA1B4ADC7400D84B53 /* kernel.cl in Sources */,
 				1E74629F1B4AC41C00D84B53 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
