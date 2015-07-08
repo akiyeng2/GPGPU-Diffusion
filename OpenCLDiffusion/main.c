@@ -177,7 +177,7 @@ int main(int argc, const char * argv[]) {
 	
 	for(unsigned int count = 0; count < iterations; count++) {
 		errorCode |= clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gridBuffer);
-		errorCode |= clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&width);
+		errorCode |= clSetKernelArg(kernel, 1, sizeof(int), (void *)&width);
 		checkError(errorCode);
 		assert(errorCode == CL_SUCCESS);
 		errorCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
