@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <getopt.h>
 //Convert a 2D array index to a 1d index
 #define getIndex(i, j, width) (i) * (width) + (j)
 
@@ -69,35 +70,29 @@ int main(int argc, const char * argv[]) {
 	unsigned int iterations = DEFAULT_NUM_ITERATIONS;
 	bool printResult = false;
 	
-	if(argc >= 2) {
-		width = atoi(argv[1]);
-		height = width;
-	}
-	if(argc >= 3) {
-		workGroupSize = atoi(argv[2]);
-	}
-	if(argc >= 4) {
-		iterations = atoi(argv[3]);
-	}
+	int opt;
 	
-	if(argc == 5) {
-		if(atoi(argv[4]) == 1) {
-			printResult = true;
+	while((opt = getopt(argc, argv, "s:w:i:p")) != -1) {
+		switch(opt) {
+			case 's':
+				width = atoi(optarg);
+				height = width;
+				break;
+			case 'w':
+				workGroupSize = atoi(optarg);
+				break;
+			case 'i':
+				iterations = atoi(optarg);
+				break;
+			case 'p':
+				printResult = true;
+				break;
+			default:
+				break;
+
 		}
 	}
-	//atoi upon failure returns 0
-	if(width == 0 || height == 0) {
-		width = DEFAULT_HEIGHT;
-		height = DEFAULT_WIDTH;
-	}
 	
-	if(workGroupSize == 0) {
-		workGroupSize = DEFAULT_WORK_GROUP_SIZE;
-	}
-	
-	if(iterations == 0) {
-		iterations = DEFAULT_NUM_ITERATIONS;
-	}
 	
 	int gridLength = width * height;
 	size_t gridSize = gridLength * sizeof(float);
@@ -146,7 +141,6 @@ int main(int argc, const char * argv[]) {
 	checkError(errorCode);
 
 	errorCode = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-	assert(errorCode == CL_SUCCESS);
 	checkError(errorCode);
 	
 	kernel = clCreateKernel(program, "diffusion", &errorCode);
