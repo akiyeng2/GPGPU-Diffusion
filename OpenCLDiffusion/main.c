@@ -72,7 +72,7 @@ int main(int argc, const char * argv[]) {
 	
 	int opt;
 	
-	while((opt = getopt(argc, argv, "s:w:i:p")) != -1) {
+	while((opt = getopt(argc, (char * const *)argv, "s:w:i:p")) != -1) {
 		switch(opt) {
 			case 's':
 				width = atoi(optarg);
