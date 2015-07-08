@@ -124,8 +124,10 @@ int main(int argc, const char * argv[]) {
 	cl_platform_id platforms[numPlatforms];
 	errorCode = clGetPlatformIDs(numPlatforms, platforms, NULL);
 	checkError(errorCode);
+	
+	cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, (int) platforms[0], 0};
 
-	context = clCreateContextFromType(0, CL_DEVICE_TYPE_ALL, 0, NULL, &errorCode);
+	context = clCreateContextFromType(properties, CL_DEVICE_TYPE_ALL, 0, NULL, &errorCode);
 	checkError(errorCode);
 	
 	errorCode = clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &dataBytes);
