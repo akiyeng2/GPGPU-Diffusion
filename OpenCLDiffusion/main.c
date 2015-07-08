@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <OpenCL/cl.h>
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <getopt.h>
+
+#ifdef __MACOSX__
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl.h>
+#endif
 //Convert a 2D array index to a 1d index
 #define getIndex(i, j, width) (i) * (width) + (j)
 
