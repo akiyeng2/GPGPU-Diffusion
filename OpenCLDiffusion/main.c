@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <getopt.h>
 
-#ifdef __MACOSX__
+#ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
