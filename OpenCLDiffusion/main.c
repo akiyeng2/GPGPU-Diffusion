@@ -3,6 +3,7 @@
 #include <OpenCL/cl.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 //Convert a 2D array index to a 1d index
 #define getIndex(i, j, width) (i) * (width) + (j)
 
@@ -43,6 +44,7 @@ static inline void checkError(cl_int errorCode) {
 	if(errorCode != CL_SUCCESS) {
 		printf("Program failed with error code %i\n", errorCode);
 	}
+	assert(errorCode == CL_SUCCESS);
 }
 
 
@@ -101,11 +103,9 @@ int main(int argc, const char * argv[]) {
 	size_t gridSize = gridLength * sizeof(float);
 
 	//OpenCL only supports float by default
-	float *lastGrid = malloc(gridSize);
-	float *currentGrid = malloc(gridSize);
+	float *grid = malloc(gridSize);
 	
-	gridInit(lastGrid, width, height);
-	gridInit(currentGrid, width, height);
+	gridInit(grid, width, height);
 
 	//Initialize the things we will need to work with OpenCL
 	cl_context context;
@@ -117,8 +117,7 @@ int main(int argc, const char * argv[]) {
 	size_t kernelLength;
 	cl_int errorCode;
 	
-	cl_mem lastGridBuffer;
-	cl_mem currentGridBuffer;
+	cl_mem gridBuffer;
 	
 	cl_device_id* devices;
 	cl_device_id gpu;
@@ -133,10 +132,11 @@ int main(int argc, const char * argv[]) {
 	gpu = devices[0];
 	
 	commandQueue = clCreateCommandQueue(context, gpu, 0, &errorCode);
-	checkError(errorCode);
 	
-	lastGridBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, gridSize, lastGrid, &errorCode);
-	currentGridBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE, gridSize, NULL, &errorCode);
+	checkError(errorCode);
+
+	gridBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, gridSize, grid, &errorCode);
+
 	checkError(errorCode);
 	
 	const char* programBuffer = readFile("kernel.cl");
@@ -144,8 +144,9 @@ int main(int argc, const char * argv[]) {
 	
 	program = clCreateProgramWithSource(context, 1, (const char **)&programBuffer, &kernelLength, &errorCode);
 	checkError(errorCode);
-	
+
 	errorCode = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+	assert(errorCode == CL_SUCCESS);
 	checkError(errorCode);
 	
 	kernel = clCreateKernel(program, "diffusion", &errorCode);
@@ -154,25 +155,19 @@ int main(int argc, const char * argv[]) {
 	size_t localWorkSize[2] = {workGroupSize, workGroupSize}, globalWorkSize[2] = {width, height};
 	
 	for(unsigned int count = 0; count < iterations; count++) {
-
-		errorCode = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&lastGridBuffer);
-		errorCode |= clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&currentGridBuffer);
-		errorCode |= clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&width);
+		errorCode |= clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gridBuffer);
+		errorCode |= clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&width);
 		checkError(errorCode);
-
 		errorCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
 		checkError(errorCode);
-		
-		//Current buffer -> Last buffer for the next iteration
-		clEnqueueCopyBuffer(commandQueue, currentGridBuffer, lastGridBuffer, 0, 0, gridSize, 0, NULL, NULL);
 	}
 	
-	errorCode = clEnqueueReadBuffer(commandQueue, currentGridBuffer, CL_TRUE, 0, gridSize, currentGrid, 0, NULL, NULL);
+	errorCode = clEnqueueReadBuffer(commandQueue, gridBuffer, CL_TRUE, 0, gridSize, grid, 0, NULL, NULL);
 	checkError(errorCode);
 	if(printResult) {
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j++) {
-				printf("%8.3f,", currentGrid[getIndex(j, i, width)]);
+				printf("%8.3f,", grid[getIndex(j, i, width)]);
 			}
 			printf("\n");
 		}
