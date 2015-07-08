@@ -55,10 +55,13 @@ static inline void checkError(cl_int errorCode) {
 
 
 void gridInit(float *grid, unsigned int length, unsigned int width) {
-	unsigned int j;
+	unsigned int i;
 	//initialize left row to 100, since the rest is automatically set to 0
-	for(j = 0; j < length; j++) {
-		grid[getIndex(0, j, width)] = 100;
+	for(i = 0; i < length; i++) {
+		grid[getIndex(0, i, width)] = 100;
+		grid[getIndex(i, 0, width)] = 100;
+		grid[getIndex(i, width - 1, width)] = 100;
+		grid[getIndex(width - 1 , i, width)] = 100;
 	}
 }
 
@@ -73,9 +76,8 @@ int main(int argc, const char * argv[]) {
 	unsigned int height = DEFAULT_HEIGHT;
 	unsigned int workGroupSize = DEFAULT_WORK_GROUP_SIZE;
 	unsigned int iterations = DEFAULT_NUM_ITERATIONS;
-	bool printResult = false;
-	
 	int opt;
+	bool printResult = false;
 	
 	while((opt = getopt(argc, (char * const *)argv, "s:w:i:p")) != -1) {
 		switch(opt) {
@@ -97,7 +99,6 @@ int main(int argc, const char * argv[]) {
 
 		}
 	}
-	
 	
 	int gridLength = width * height;
 	size_t gridSize = gridLength * sizeof(float);
@@ -121,6 +122,13 @@ int main(int argc, const char * argv[]) {
 	
 	cl_device_id* devices;
 	cl_device_id gpu;
+	
+	cl_uint numPlatforms;
+
+	errorCode = clGetPlatformIDs(0, NULL, &numPlatforms);
+	cl_platform_id platforms[numPlatforms];
+	errorCode = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	checkError(errorCode);
 
 	context = clCreateContextFromType(0, CL_DEVICE_TYPE_ALL, 0, NULL, &errorCode);
 	checkError(errorCode);
@@ -172,5 +180,16 @@ int main(int argc, const char * argv[]) {
 		}
 		printf("\n");
 	}
+	
+	free(grid);
+	free(devices);
+
+
+	clReleaseContext(context);
+	clReleaseKernel(kernel);
+	clReleaseProgram(program);
+	clReleaseCommandQueue(commandQueue);
+	
+	
     return 0;
 }
