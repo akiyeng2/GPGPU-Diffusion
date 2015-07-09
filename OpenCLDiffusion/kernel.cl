@@ -15,6 +15,7 @@ __kernel void diffusion(__global float *currentGrid, int width) {
 		float right = currentGrid[getIndex(tx + 1, ty)];
 		float up = currentGrid[getIndex(tx, ty - 1)];
 		float down = currentGrid[getIndex(tx, ty + 1)];
+
 		currentGrid[getIndex(tx, ty)] = (left + right + up + down) * 0.25;
 	}
 }
