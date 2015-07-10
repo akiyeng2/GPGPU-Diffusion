@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <getopt.h>
-#define getIndex(i, j) ((i) * (DEFAULT_WIDTH) + (j))
+#include "kernel.cu"
+#define getIndex(i, j) ((i) * (width) + (j))
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_WIDTH 16
@@ -17,19 +18,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
-__global__ void diffuse(float *grid, int width, int blockSize) {
 
-	int tx = blockIdx.x * blockSize + threadIdx.x;
-	int ty = blockIdx.y * blockSize + threadIdx.y;
-
-	if(tx > 0 && tx < width - 1 && ty > 0 && ty < width - 1) {
-		float left = grid[getIndex(tx - 1, ty)];
-		float right = grid[getIndex(tx + 1, ty)];
-		float up = grid[getIndex(tx, ty - 1)];
-		float down = grid[getIndex(tx, ty + 1)];
-		grid[getIndex(tx, ty)] = (left + right + up + down) * 0.25;
-	}
-}
 void initGrid(float *grid, int width) {
 	int i;
 	for(i = 0; i < width; i++) {
