@@ -13,10 +13,10 @@
 //Convert a 2D array index to a 1d index
 #define getIndex(i, j, width) (i) * (width) + (j)
 
-static const unsigned int DEFAULT_WORK_GROUP_SIZE = 16;
-static const unsigned int DEFAULT_WIDTH = 1024;
-static const unsigned int DEFAULT_HEIGHT = 1024;
-static const unsigned int DEFAULT_NUM_ITERATIONS = 100;
+#define DEFAULT_WORK_GROUP_SIZE 16
+#define DEFAULT_WIDTH 1024
+#define DEFAULT_HEIGHT 1024
+#define DEFAULT_NUM_ITERATIONS 100
 
 const char *readFile(const char *filename){
 	long int size = 0;
