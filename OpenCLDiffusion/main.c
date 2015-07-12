@@ -10,52 +10,21 @@
 #else
 #include <CL/cl.h>
 #endif
-//Convert a 2D array index to a 1d index
 
 #include "error.h"
+#include "readFile.h"
 
+//Convert a 2D array index to a 1d index
 #define getIndex(i, j, width) (i) * (width) + (j)
 
 #define DEFAULT_WORK_GROUP_SIZE 4
 #define DEFAULT_WIDTH 16
-#define DEFAULT_HEIGHT 16
 #define DEFAULT_NUM_ITERATIONS 100
 
-
-const char *readFile(const char *filename){
-	long int size = 0;
-	FILE *file = fopen(filename, "rb");
-	
-	if(!file) {
-		fputs("File error.\n", stderr);
-		return NULL;
-	}
-	
-	fseek(file, 0, SEEK_END);
-	size = ftell(file);
-	rewind(file);
-	
-	char *result = (char *) malloc(size);
-	if(!result) {
-		fputs("Memory error.\n", stderr);
-		return NULL;
-	}
-	
-	if(fread(result, 1, size, file) != size) {
-		fputs("Read error.\n", stderr);
-		return NULL;
-	}
-		
-	fclose(file);
-	result = realloc(result, size + sizeof(char));
-	result[size] = '\0';
-	return result;
-}
-
-void gridInit(float *grid, unsigned int length, unsigned int width) {
+void gridInit(float *grid, unsigned int width) {
 	unsigned int i;
 	//initialize left row to 100, since the rest is automatically set to 0
-	for(i = 0; i < length; i++) {
+	for(i = 0; i < width; i++) {
 		grid[getIndex(0, i, width)] = 100;
 		grid[getIndex(i, 0, width)] = 100;
 		grid[getIndex(i, width - 1, width)] = 100;
@@ -63,50 +32,13 @@ void gridInit(float *grid, unsigned int length, unsigned int width) {
 	}
 }
 
-int main(int argc, const char * argv[]) {
-	unsigned int width = DEFAULT_WIDTH;
-	unsigned int height = DEFAULT_HEIGHT;
-	unsigned int workGroupSize = DEFAULT_WORK_GROUP_SIZE;
-	unsigned int iterations = DEFAULT_NUM_ITERATIONS;
-	int opt;
-	bool printResult = false;
-	
-	while((opt = getopt(argc, (char * const *)argv, "s:w:i:p")) != -1) {
-		switch(opt) {
-			case 's':
-				width = atoi(optarg);
-				height = width;
-				break;
-			case 'w':
-				workGroupSize = atoi(optarg);
-				break;
-			case 'i':
-				iterations = atoi(optarg);
-				break;
-			case 'p':
-				printResult = true;
-				break;
-			default:
-				break;
-		}
-	}
-	
-	int gridLength = width * height;
-	size_t gridSize = gridLength * sizeof(float);
-
-	//OpenCL only supports float by default
-	float *grid = malloc(gridSize);
-	
-	gridInit(grid, width, height);
-
-	//Initialize the things we will need to work with OpenCL
+void execute(float *grid, size_t gridSize, unsigned int width, unsigned int workGroupSize, unsigned int iterations, bool printResult) {
 	cl_context context;
 	cl_command_queue commandQueue;
 	cl_program program;
 	cl_kernel kernel;
 	
-	size_t dataBytes;
-	size_t kernelLength;
+	size_t dataBytes, kernelLength;
 	cl_int errorCode;
 	
 	cl_mem gridBuffer;
@@ -165,7 +97,7 @@ int main(int argc, const char * argv[]) {
 	kernel = clCreateKernel(program, "diffuse", &errorCode);
 	checkError(errorCode);
 
-	size_t localWorkSize[2] = {workGroupSize, workGroupSize}, globalWorkSize[2] = {width, height};
+	size_t localWorkSize[2] = {workGroupSize, workGroupSize}, globalWorkSize[2] = {width, width};
 
 	errorCode |= clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gridBuffer);
 	errorCode |= clSetKernelArg(kernel, 1, sizeof(float) * workGroupSize * workGroupSize, NULL);
@@ -180,9 +112,57 @@ int main(int argc, const char * argv[]) {
 	errorCode = clEnqueueReadBuffer(commandQueue, gridBuffer, CL_TRUE, 0, gridSize, grid, 0, NULL, NULL);
 	checkError(errorCode);
 
+
+
+	free(devices);
+	free((void *)programBuffer);
+	clReleaseContext(context);
+	clReleaseKernel(kernel);
+	clReleaseProgram(program);
+	clReleaseCommandQueue(commandQueue);
+
+	
+}
+
+int main(int argc, const char * argv[]) {
+	unsigned int width = DEFAULT_WIDTH;
+	unsigned int workGroupSize = DEFAULT_WORK_GROUP_SIZE;
+	unsigned int iterations = DEFAULT_NUM_ITERATIONS;
+	int opt;
+	bool printResult = false;
+	
+	while((opt = getopt(argc, (char * const *)argv, "s:w:i:p")) != -1) {
+		switch(opt) {
+			case 's':
+				width = atoi(optarg);
+				break;
+			case 'w':
+				workGroupSize = atoi(optarg);
+				break;
+			case 'i':
+				iterations = atoi(optarg);
+				break;
+			case 'p':
+				printResult = true;
+				break;
+			default:
+				break;
+		}
+	}
+	
+	int gridLength = width * width;
+	size_t gridSize = gridLength * sizeof(float);
+
+	//OpenCL only supports float by default
+	float *grid = malloc(gridSize);
+	
+	gridInit(grid, width);
+
+	execute(grid, gridSize, width, workGroupSize, iterations, printResult);	
+
 	if(printResult) {
 		for(int i = 0; i < width; i++) {
-			for(int j = 0; j < height; j++) {
+			for(int j = 0; j < width; j++) {
 				printf("%8.3f,", grid[getIndex(j, i, width)]);
 			}
 			printf("\n");
@@ -191,12 +171,6 @@ int main(int argc, const char * argv[]) {
 	}
 	
 	free(grid);
-	free(devices);
-	free((void *)programBuffer);
-	clReleaseContext(context);
-	clReleaseKernel(kernel);
-	clReleaseProgram(program);
-	clReleaseCommandQueue(commandQueue);
 	
     return 0;
 }
