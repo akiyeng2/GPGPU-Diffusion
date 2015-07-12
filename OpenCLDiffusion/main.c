@@ -41,9 +41,10 @@ const char *readFile(const char *filename){
 		fputs("Read error.\n", stderr);
 		return NULL;
 	}
-	
+		
 	fclose(file);
-	result[size - 1] = '\0';
+	result = realloc(result, size + sizeof(char));
+	result[size] = '\0';
 	return result;
 }
 
@@ -97,7 +98,6 @@ int main(int argc, const char * argv[]) {
 				break;
 			default:
 				break;
-
 		}
 	}
 	
@@ -155,21 +155,17 @@ int main(int argc, const char * argv[]) {
 	
 	gridBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, gridSize, grid, &errorCode);
 
-	
 	checkError(errorCode);
 	assert(errorCode == CL_SUCCESS);
 	const char* programBuffer = readFile("kernel.cl");
+
 	kernelLength = strlen(programBuffer);
 	
 	program = clCreateProgramWithSource(context, 1, (const char **)&programBuffer, &kernelLength, &errorCode);
-	
-	
 	checkError(errorCode);
 	assert(errorCode == CL_SUCCESS);
 	
 	errorCode = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-
-
 	if (errorCode == CL_BUILD_PROGRAM_FAILURE) {
 		// Determine the size of the log
 		size_t log_size;
@@ -182,31 +178,35 @@ int main(int argc, const char * argv[]) {
 		clGetProgramBuildInfo(program, gpu, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
 		
 		// Print the log
+		free(log);
 		printf("%s\n", log);
 	}
-	
 	checkError(errorCode);
 	assert(errorCode == CL_SUCCESS);
 	
 	kernel = clCreateKernel(program, "diffuse", &errorCode);
 	checkError(errorCode);
 	assert(errorCode == CL_SUCCESS);
+
 	size_t localWorkSize[2] = {workGroupSize, workGroupSize}, globalWorkSize[2] = {width, height};
-	for(unsigned int count = 0; count < iterations; count++) {
-		errorCode |= clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gridBuffer);
-		errorCode |= clSetKernelArg(kernel, 1, sizeof(float) * workGroupSize * workGroupSize, NULL);
-		errorCode |= clSetKernelArg(kernel, 2, sizeof(int), (void *)&width);
-		errorCode |= clSetKernelArg(kernel, 3, sizeof(int), (void *)&workGroupSize);
-		checkError(errorCode);
-		assert(errorCode == CL_SUCCESS);
-		errorCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
-		checkError(errorCode);
-		assert(errorCode == CL_SUCCESS);
-	}
+
+
+	errorCode |= clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gridBuffer);
+	errorCode |= clSetKernelArg(kernel, 1, sizeof(float) * workGroupSize * workGroupSize, NULL);
+	errorCode |= clSetKernelArg(kernel, 2, sizeof(int), (void *)&width);
+	errorCode |= clSetKernelArg(kernel, 3, sizeof(int), (void *)&workGroupSize);
+	errorCode |= clSetKernelArg(kernel, 4, sizeof(int), (void *)&iterations);
+	checkError(errorCode);
+	assert(errorCode == CL_SUCCESS);
+	
+	errorCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
+	checkError(errorCode);
+	assert(errorCode == CL_SUCCESS);
 	
 	errorCode = clEnqueueReadBuffer(commandQueue, gridBuffer, CL_TRUE, 0, gridSize, grid, 0, NULL, NULL);
 	checkError(errorCode);
 	assert(errorCode == CL_SUCCESS);
+	
 	if(printResult) {
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j++) {
@@ -219,13 +219,11 @@ int main(int argc, const char * argv[]) {
 	
 	free(grid);
 	free(devices);
-
-
+	free((void *)programBuffer);
 	clReleaseContext(context);
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
 	clReleaseCommandQueue(commandQueue);
-	
 	
     return 0;
 }
