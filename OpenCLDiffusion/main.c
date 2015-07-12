@@ -13,10 +13,13 @@
 //Convert a 2D array index to a 1d index
 #define getIndex(i, j, width) (i) * (width) + (j)
 
-#define DEFAULT_WORK_GROUP_SIZE 16
-#define DEFAULT_WIDTH 1024
-#define DEFAULT_HEIGHT 1024
+#define DEFAULT_WORK_GROUP_SIZE 4
+#define DEFAULT_WIDTH 16
+#define DEFAULT_HEIGHT 16
 #define DEFAULT_NUM_ITERATIONS 100
+
+#define checkError(code) checkErr(code); assert(code == CL_SUCCESS);
+
 
 const char *readFile(const char *filename){
 	long int size = 0;
@@ -48,7 +51,7 @@ const char *readFile(const char *filename){
 	return result;
 }
 
-static inline void checkError(cl_int errorCode) {
+static inline void checkErr(cl_int errorCode) {
 	if(errorCode != CL_SUCCESS) {
 		printf("Program failed with error code %i\n", errorCode);
 	}
@@ -131,15 +134,11 @@ int main(int argc, const char * argv[]) {
 	errorCode = clGetPlatformIDs(numPlatforms, platforms, NULL);
 	
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, (int) platforms[0], 0};
 
 	context = clCreateContextFromType(properties, CL_DEVICE_TYPE_ALL, 0, NULL, &errorCode);
-	
-
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	errorCode = clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &dataBytes);
 	devices = malloc(dataBytes);
@@ -148,22 +147,15 @@ int main(int argc, const char * argv[]) {
 	gpu = devices[0];
 	
 	commandQueue = clCreateCommandQueue(context, gpu, 0, &errorCode);
-	
-
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	gridBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, gridSize, grid, &errorCode);
-
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
-	const char* programBuffer = readFile("kernel.cl");
-
-	kernelLength = strlen(programBuffer);
 	
+	const char* programBuffer = readFile("kernel.cl");
+	kernelLength = strlen(programBuffer);
 	program = clCreateProgramWithSource(context, 1, (const char **)&programBuffer, &kernelLength, &errorCode);
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	errorCode = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 	if (errorCode == CL_BUILD_PROGRAM_FAILURE) {
@@ -182,14 +174,11 @@ int main(int argc, const char * argv[]) {
 		printf("%s\n", log);
 	}
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	kernel = clCreateKernel(program, "diffuse", &errorCode);
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 
 	size_t localWorkSize[2] = {workGroupSize, workGroupSize}, globalWorkSize[2] = {width, height};
-
 
 	errorCode |= clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gridBuffer);
 	errorCode |= clSetKernelArg(kernel, 1, sizeof(float) * workGroupSize * workGroupSize, NULL);
@@ -197,16 +186,13 @@ int main(int argc, const char * argv[]) {
 	errorCode |= clSetKernelArg(kernel, 3, sizeof(int), (void *)&workGroupSize);
 	errorCode |= clSetKernelArg(kernel, 4, sizeof(int), (void *)&iterations);
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	errorCode = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
 	
 	errorCode = clEnqueueReadBuffer(commandQueue, gridBuffer, CL_TRUE, 0, gridSize, grid, 0, NULL, NULL);
 	checkError(errorCode);
-	assert(errorCode == CL_SUCCESS);
-	
+
 	if(printResult) {
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j++) {
