@@ -11,14 +11,15 @@
 #include <CL/cl.h>
 #endif
 //Convert a 2D array index to a 1d index
+
+#include "error.h"
+
 #define getIndex(i, j, width) (i) * (width) + (j)
 
 #define DEFAULT_WORK_GROUP_SIZE 4
 #define DEFAULT_WIDTH 16
 #define DEFAULT_HEIGHT 16
 #define DEFAULT_NUM_ITERATIONS 100
-
-#define checkError(code) checkErr(code); assert(code == CL_SUCCESS);
 
 
 const char *readFile(const char *filename){
@@ -51,14 +52,6 @@ const char *readFile(const char *filename){
 	return result;
 }
 
-static inline void checkErr(cl_int errorCode) {
-	if(errorCode != CL_SUCCESS) {
-		printf("Program failed with error code %i\n", errorCode);
-	}
-
-}
-
-
 void gridInit(float *grid, unsigned int length, unsigned int width) {
 	unsigned int i;
 	//initialize left row to 100, since the rest is automatically set to 0
@@ -70,12 +63,6 @@ void gridInit(float *grid, unsigned int length, unsigned int width) {
 	}
 }
 
-/**
- * Param 1: Grid length/width
- * Param 2: Work group size
- * Param 3: Iterations
- * Param 4: Print result (1/0)
- */
 int main(int argc, const char * argv[]) {
 	unsigned int width = DEFAULT_WIDTH;
 	unsigned int height = DEFAULT_HEIGHT;
